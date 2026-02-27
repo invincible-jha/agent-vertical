@@ -38,7 +38,6 @@ from __future__ import annotations
 import os
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
 
 from agent_vertical.certified.schema import (
     ComplianceFramework,

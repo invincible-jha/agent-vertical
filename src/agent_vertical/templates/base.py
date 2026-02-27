@@ -172,10 +172,28 @@ def load_all_templates() -> TemplateRegistry:
     TemplateRegistry
         The default registry with all built-in templates registered.
     """
-    # Importing these modules triggers their module-level registration calls.
+    import importlib.util
+    import pathlib
+    import sys
+
+    _templates_dir = pathlib.Path(__file__).parent
+
+    # education and legal have no sub-package conflict; import normally.
     import agent_vertical.templates.education  # noqa: F401
-    import agent_vertical.templates.finance  # noqa: F401
-    import agent_vertical.templates.healthcare  # noqa: F401
     import agent_vertical.templates.legal  # noqa: F401
+
+    # healthcare.py and finance.py are shadowed by same-named sub-packages
+    # introduced by background agents.  Load the flat .py files explicitly.
+    for module_name, file_name in (
+        ("agent_vertical.templates._healthcare_templates", "healthcare.py"),
+        ("agent_vertical.templates._finance_templates", "finance.py"),
+    ):
+        if module_name not in sys.modules:
+            file_path = _templates_dir / file_name
+            spec = importlib.util.spec_from_file_location(module_name, file_path)
+            if spec is not None and spec.loader is not None:
+                module = importlib.util.module_from_spec(spec)
+                sys.modules[module_name] = module
+                spec.loader.exec_module(module)  # type: ignore[attr-defined]
 
     return _default_registry

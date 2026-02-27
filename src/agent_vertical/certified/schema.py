@@ -29,7 +29,6 @@ import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any
 
 import yaml
 from pydantic import BaseModel, Field, field_validator
@@ -131,7 +130,7 @@ class ToolConfig:
     name: str
     description: str
     required: bool
-    parameters: dict[str, Any]
+    parameters: dict[str, object]
 
 
 @dataclass(frozen=True)
@@ -203,7 +202,7 @@ class TemplateMetadata(BaseModel):
 
 def _serialise_safety_rules(
     rules: list[SafetyRule],
-) -> list[dict[str, Any]]:
+) -> list[dict[str, object]]:
     return [
         {
             "rule_id": r.rule_id,
@@ -216,7 +215,7 @@ def _serialise_safety_rules(
 
 
 def _deserialise_safety_rules(
-    raw: list[dict[str, Any]],
+    raw: list[dict[str, object]],
 ) -> list[SafetyRule]:
     return [
         SafetyRule(
@@ -231,7 +230,7 @@ def _deserialise_safety_rules(
 
 def _serialise_tool_configs(
     tools: list[ToolConfig],
-) -> list[dict[str, Any]]:
+) -> list[dict[str, object]]:
     return [
         {
             "name": t.name,
@@ -244,7 +243,7 @@ def _serialise_tool_configs(
 
 
 def _deserialise_tool_configs(
-    raw: list[dict[str, Any]],
+    raw: list[dict[str, object]],
 ) -> list[ToolConfig]:
     return [
         ToolConfig(
@@ -259,7 +258,7 @@ def _deserialise_tool_configs(
 
 def _serialise_eval_benchmarks(
     benchmarks: list[EvalBenchmark],
-) -> list[dict[str, Any]]:
+) -> list[dict[str, object]]:
     return [
         {
             "name": b.name,
@@ -272,7 +271,7 @@ def _serialise_eval_benchmarks(
 
 
 def _deserialise_eval_benchmarks(
-    raw: list[dict[str, Any]],
+    raw: list[dict[str, object]],
 ) -> list[EvalBenchmark]:
     return [
         EvalBenchmark(
@@ -322,7 +321,7 @@ class DomainTemplate(BaseModel):
     system_prompt: str
     tool_configs: list[ToolConfig] = Field(default_factory=list)
     safety_rules: list[SafetyRule] = Field(default_factory=list)
-    governance_policies: dict[str, Any] = Field(default_factory=dict)
+    governance_policies: dict[str, object] = Field(default_factory=dict)
     eval_benchmarks: list[EvalBenchmark] = Field(default_factory=list)
     compliance_evidence: dict[str, str] = Field(default_factory=dict)
 
@@ -338,7 +337,7 @@ class DomainTemplate(BaseModel):
     # Serialisation helpers
     # ------------------------------------------------------------------
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> dict[str, object]:
         """Serialise to a plain Python dictionary.
 
         The returned dict is safe for JSON/YAML serialisation.  Dataclass
@@ -347,9 +346,9 @@ class DomainTemplate(BaseModel):
 
         Returns
         -------
-        dict[str, Any]
+        dict[str, object]
         """
-        metadata_dict: dict[str, Any] = {
+        metadata_dict: dict[str, object] = {
             "name": self.metadata.name,
             "version": self.metadata.version,
             "domain": self.metadata.domain,
@@ -371,7 +370,7 @@ class DomainTemplate(BaseModel):
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "DomainTemplate":
+    def from_dict(cls, data: dict[str, object]) -> "DomainTemplate":
         """Deserialise from a plain Python dictionary.
 
         Parameters
@@ -438,7 +437,7 @@ class DomainTemplate(BaseModel):
         -------
         DomainTemplate
         """
-        data: dict[str, Any] = yaml.safe_load(yaml_text)
+        data: dict[str, object] = yaml.safe_load(yaml_text)
         return cls.from_dict(data)
 
     def validate_template(self) -> list[str]:

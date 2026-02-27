@@ -1,0 +1,132 @@
+# PCI-DSS Safety Rules — Finance Agent Template
+# Runtime safety constraints aligned with PCI DSS v4.0 requirements.
+# Version: 1.0.0
+# Framework: PCI DSS v4.0, SOX Section 302/404, SEC Regulation Best Interest
+
+metadata:
+  version: "1.0.0"
+  frameworks:
+    - "PCI-DSS-v4"
+    - "SOX"
+    - "SEC-Reg-BI"
+  last_reviewed: "2026-01-01"
+  applicable_to:
+    - market_research
+    - portfolio_advisor
+    - risk_assessment
+    - finance_general
+
+rules:
+  - id: PCI-001
+    category: cardholder_data_protection
+    severity: critical
+    description: >
+      Never expose, log, or repeat Primary Account Numbers (PANs), Card
+      Verification Values (CVVs), or magnetic stripe data. Mask PANs to show
+      only the last four digits in any displayed output.
+    enforcement: block_on_violation
+    applies_to: all_outputs
+    mask_pattern: "XXXX-XXXX-XXXX-{last4}"
+
+  - id: PCI-002
+    category: authentication
+    severity: critical
+    description: >
+      Agent sessions processing cardholder data must use multi-factor
+      authentication. Single-factor access to cardholder data is prohibited.
+    enforcement: block_on_violation
+    applies_to: session_setup
+
+  - id: PCI-003
+    category: encryption
+    severity: critical
+    description: >
+      All cardholder data in transit must be encrypted using TLS 1.2 or higher.
+      Data at rest must use AES-256 encryption.
+    enforcement: require_in_config
+    applies_to: data_transmission
+
+  - id: PCI-004
+    category: audit_logging
+    severity: critical
+    description: >
+      All access to cardholder data must be logged with user ID, timestamp,
+      action type, and data elements accessed. Logs must be retained for 12 months.
+    enforcement: require_before_response
+    applies_to: cardholder_data_access
+    retention_months: 12
+
+  - id: PCI-005
+    category: access_control
+    severity: high
+    description: >
+      Access to cardholder data must be restricted on a need-to-know basis.
+      The principle of least privilege applies to all agent data access.
+    enforcement: log_and_warn
+    applies_to: all_inputs
+
+  - id: SEC-001
+    category: investment_advice_disclaimer
+    severity: critical
+    description: >
+      All outputs must include: "This content is for informational purposes only
+      and does not constitute investment advice."
+    enforcement: require_in_output
+    applies_to: all_outputs
+    required_text_pattern: "does not constitute investment advice"
+
+  - id: SEC-002
+    category: trade_recommendation_prohibition
+    severity: critical
+    description: >
+      Specific buy, sell, or hold recommendations for individual securities are
+      prohibited unless the agent is operating within a registered investment
+      advisory platform with explicit user suitability analysis.
+    enforcement: block_on_violation
+    applies_to: all_outputs
+
+  - id: SEC-003
+    category: past_performance_disclaimer
+    severity: high
+    description: >
+      All outputs referencing historical performance must include the disclaimer
+      that past performance does not guarantee future results.
+    enforcement: require_in_output
+    applies_to: performance_related_outputs
+    required_text_pattern: "past performance"
+
+  - id: SOX-001
+    category: audit_trail_immutability
+    severity: critical
+    description: >
+      Audit trail records supporting financial reporting must be immutable.
+      Deletion or modification of audit records is prohibited.
+    enforcement: block_on_violation
+    applies_to: audit_write_operations
+
+  - id: SOX-002
+    category: internal_control_documentation
+    severity: high
+    description: >
+      All AI-assisted decisions that feed into financial reports must be
+      documented with the model version, prompt hash, and human reviewer ID.
+    enforcement: require_before_commit
+    applies_to: financial_reporting_outputs
+
+  - id: FAIR-001
+    category: fair_lending
+    severity: critical
+    description: >
+      Protected class characteristics (race, gender, religion, national origin,
+      age, familial status, disability) must never be used as risk input factors.
+    enforcement: block_on_violation
+    applies_to: all_risk_model_inputs
+    protected_classes:
+      - race
+      - gender
+      - religion
+      - national_origin
+      - age
+      - familial_status
+      - disability
+      - marital_status

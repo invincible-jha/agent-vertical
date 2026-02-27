@@ -1,0 +1,80 @@
+# Production Monitoring Configuration — Healthcare Agent Template
+# Defines alerting, SLO, and observability settings for production deployments.
+# Version: 1.0.0
+
+metadata:
+  version: "1.0.0"
+  environment: production
+  last_reviewed: "2026-01-01"
+
+slos:
+  latency:
+    p50_ms: 2000
+    p95_ms: 5000
+    p99_ms: 10000
+    alert_on_breach: true
+    alert_channel: pagerduty
+
+  availability:
+    target_pct: 99.9
+    measurement_window_days: 30
+    alert_on_breach: true
+    alert_channel: pagerduty
+
+  error_rate:
+    max_pct: 1.0
+    measurement_window_minutes: 5
+    alert_on_breach: true
+    alert_channel: pagerduty
+
+audit_trail:
+  enabled: true
+  storage_backend: "immutable_object_store"
+  retention_days: 2555  # 7 years per HIPAA
+  encryption: "AES-256"
+  compression: true
+  fields_to_capture:
+    - session_id
+    - user_id
+    - timestamp_utc
+    - action_type
+    - resource_accessed
+    - phi_present
+    - safety_rules_evaluated
+    - escalation_triggered
+    - response_hash
+
+phi_scan:
+  enabled: true
+  scan_inputs: true
+  scan_outputs: true
+  redact_before_logging: true
+  patterns:
+    - name: ssn
+      regex: '\d{3}-\d{2}-\d{4}'
+    - name: mrn
+      regex: 'MRN[:\s]*\d{6,10}'
+    - name: dob
+      regex: '\d{2}/\d{2}/\d{4}'
+    - name: phone
+      regex: '\+?1?\s?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}'
+
+safety_rule_monitoring:
+  enabled: true
+  log_rule_evaluations: true
+  alert_on_block: true
+  alert_on_emergency_escalation: true
+  dashboard_refresh_seconds: 60
+
+cost_monitoring:
+  enabled: true
+  alert_on_budget_pct: 80
+  daily_budget_usd: 100.0
+  alert_channel: slack
+
+model_performance:
+  track_latency: true
+  track_token_usage: true
+  track_safety_rule_hits: true
+  track_escalation_rate: true
+  reporting_interval_minutes: 15

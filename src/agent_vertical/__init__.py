@@ -33,6 +33,8 @@ from __future__ import annotations
 
 __version__: str = "0.1.0"
 
+from agent_vertical.convenience import Template
+
 # ---------------------------------------------------------------------------
 # Certification
 # ---------------------------------------------------------------------------
@@ -106,6 +108,7 @@ from agent_vertical.benchmarks.scenarios import BenchmarkScenario, ScenarioLibra
 __all__ = [
     # Version
     "__version__",
+    "Template",
     # Certification
     "CertificationEvaluator",
     "CertificationRequirement",

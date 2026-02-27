@@ -1,0 +1,120 @@
+# SOX Compliance Checklist — Finance Agent Deployment
+# Use this checklist to validate that a finance agent deployment meets
+# Sarbanes-Oxley Act (SOX) requirements before going to production.
+# Version: 1.0.0
+# Reference: SOX Sections 302, 404, 409, 802, 906
+
+metadata:
+  version: "1.0.0"
+  framework: "SOX-2002"
+  references:
+    - "SOX Section 302 — Corporate Responsibility for Financial Reports"
+    - "SOX Section 404 — Management Assessment of Internal Controls"
+    - "SOX Section 409 — Real Time Issuer Disclosures"
+    - "SOX Section 802 — Criminal Penalties for Altering Documents"
+    - "SOX Section 906 — Corporate Responsibility for Financial Reports"
+  last_reviewed: "2026-01-01"
+
+section_302_checks:
+  - id: S302-001
+    title: CEO/CFO Certification Workflow
+    description: >
+      Verify that AI-generated financial analysis outputs that feed into
+      SEC filings have a documented CEO/CFO review and sign-off workflow.
+    required: true
+    verification: "Review sign-off workflow documentation"
+
+  - id: S302-002
+    title: Material Weakness Disclosure
+    description: >
+      Confirm that the AI system is covered by the organisation's internal
+      control assessment and that any AI-related material weaknesses are
+      disclosed in the relevant certification.
+    required: true
+    verification: "Internal controls audit documentation review"
+
+section_404_checks:
+  - id: S404-001
+    title: Internal Controls Assessment
+    description: >
+      Include AI-assisted financial processes in the annual management
+      assessment of internal controls over financial reporting (ICFR).
+    required: true
+    verification: "ICFR scope document confirms AI system inclusion"
+
+  - id: S404-002
+    title: Auditor Access to AI Decision Logs
+    description: >
+      External auditors must have read access to AI decision logs, model
+      version histories, and prompt records for audited periods.
+    required: true
+    verification: "Auditor access provisioned and tested"
+
+  - id: S404-003
+    title: Control Effectiveness Testing
+    description: >
+      Test the operating effectiveness of controls over AI-assisted financial
+      processes at least annually (or quarterly for high-risk processes).
+    required: true
+    frequency: "quarterly_for_high_risk"
+    verification: "Control testing results documented"
+
+section_802_checks:
+  - id: S802-001
+    title: Record Retention — 7 Years
+    description: >
+      All audit logs, AI decision records, model version snapshots, and
+      related documentation must be retained for a minimum of 7 years.
+    required: true
+    retention_days: 2555
+    verification: "Storage lifecycle policy configured and verified"
+
+  - id: S802-002
+    title: Immutable Audit Trail
+    description: >
+      Audit trail records must be stored in an immutable format. No deletion
+      or modification of audit records is permitted after writing.
+    required: true
+    verification: "Write-once storage or cryptographic audit log verified"
+
+  - id: S802-003
+    title: Destruction Prohibition
+    description: >
+      Document destruction schedules must explicitly exclude AI audit logs
+      and financial model decision records from routine purges.
+    required: true
+    verification: "Retention policy reviewed and destruction exclusions confirmed"
+
+ai_specific_controls:
+  - id: AI-SOX-001
+    title: Model Version Control
+    description: >
+      All model versions used in financial analysis must be version-controlled
+      and the active version at each reporting date must be documented.
+    required: true
+    verification: "Model registry with version history and effective dates"
+
+  - id: AI-SOX-002
+    title: Human Review Gate for Material Outputs
+    description: >
+      AI outputs that feed directly into material financial figures require
+      mandatory human review before the figures are finalised.
+    required: true
+    verification: "Human review gate is implemented and logged"
+
+  - id: AI-SOX-003
+    title: Bias and Fairness Audit
+    description: >
+      AI models used in lending, underwriting, or credit decisions must
+      undergo annual bias and fairness audits against fair lending standards.
+    required: true
+    frequency: annual
+    verification: "Bias audit report is documented and findings are tracked"
+
+  - id: AI-SOX-004
+    title: Explainability for Audit
+    description: >
+      AI-generated risk scores and decisions must produce human-readable
+      explanations sufficient for an auditor to understand the key drivers.
+    required: true
+    verification: "Explainability output reviewed by audit team"

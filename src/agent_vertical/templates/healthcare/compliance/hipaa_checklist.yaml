@@ -1,0 +1,128 @@
+# HIPAA Compliance Checklist — Healthcare Agent Deployment
+# Use this checklist to validate that a healthcare agent deployment meets
+# HIPAA Privacy Rule and Security Rule requirements before going to production.
+# Version: 1.0.0
+
+metadata:
+  version: "1.0.0"
+  framework: "HIPAA-2013"
+  references:
+    - "45 CFR Part 160 — General Administrative Requirements"
+    - "45 CFR Part 164 — Security and Privacy"
+  last_reviewed: "2026-01-01"
+
+privacy_rule_checks:
+  - id: PR-001
+    title: Minimum Necessary Standard
+    description: >
+      Verify that the agent processes only the minimum PHI necessary to
+      accomplish the task. No broad data access is granted.
+    required: true
+    verification: "Review data access logs for scope creep"
+
+  - id: PR-002
+    title: PHI Disclosure Limitations
+    description: >
+      Confirm the agent does not disclose PHI to unauthorised third parties
+      or echo PHI in responses beyond session scope.
+    required: true
+    verification: "Red-team test: provide PHI, check if echoed in logs or responses"
+
+  - id: PR-003
+    title: Patient Rights Compliance
+    description: >
+      Ensure mechanisms exist for patients to request access, amendment,
+      and restriction of their PHI used in agent interactions.
+    required: true
+    verification: "Confirm data subject rights workflow is documented and tested"
+
+  - id: PR-004
+    title: Notice of Privacy Practices
+    description: >
+      Users must be informed that AI assistance may process their PHI and
+      how that data is handled.
+    required: true
+    verification: "Verify disclosure notice is presented at session start"
+
+security_rule_checks:
+  - id: SR-001
+    title: Access Control
+    description: >
+      All healthcare agent endpoints require authenticated access. Role-based
+      access control (RBAC) must restrict PHI to authorised users only.
+    required: true
+    verification: "Penetration test unauthenticated access paths"
+
+  - id: SR-002
+    title: Audit Controls
+    description: >
+      Implement hardware, software, and procedural mechanisms to record and
+      examine access to information systems containing PHI.
+    required: true
+    verification: "Confirm audit log is immutable and covers all PHI interactions"
+
+  - id: SR-003
+    title: Data Integrity
+    description: >
+      PHI must not be improperly altered or destroyed. AI outputs that modify
+      clinical records must route through integrity-verified pipelines.
+    required: true
+    verification: "Confirm write paths have integrity checks and version history"
+
+  - id: SR-004
+    title: Transmission Security
+    description: >
+      All PHI transmitted between agent components must use TLS 1.2 or higher.
+      Plaintext PHI transmission is prohibited.
+    required: true
+    verification: "TLS certificate audit + traffic inspection"
+
+  - id: SR-005
+    title: Encryption at Rest
+    description: >
+      PHI stored in audit logs, session stores, or vector databases must be
+      encrypted using AES-256 or equivalent.
+    required: true
+    verification: "Storage encryption audit"
+
+  - id: SR-006
+    title: Automatic Logoff
+    description: >
+      Healthcare agent sessions must automatically terminate after a period
+      of inactivity to prevent unauthorised PHI access.
+    required: true
+    recommended_inactivity_timeout_minutes: 15
+    verification: "Session timeout integration test"
+
+  - id: SR-007
+    title: Risk Analysis
+    description: >
+      Conduct and document a thorough risk analysis of the agent deployment
+      before production launch. Repeat annually.
+    required: true
+    verification: "Risk analysis document is signed and dated"
+
+breach_notification_checks:
+  - id: BN-001
+    title: Breach Detection
+    description: >
+      Automated monitoring must detect anomalous PHI access patterns and
+      trigger alerts within 1 hour of detection.
+    required: true
+    verification: "Inject anomalous access pattern, confirm alert fires"
+
+  - id: BN-002
+    title: 60-Day Notification Window
+    description: >
+      In the event of a confirmed breach, affected individuals must be
+      notified within 60 calendar days.
+    required: true
+    verification: "Breach response runbook documented and rehearsed"
+
+  - id: BN-003
+    title: HHS Reporting
+    description: >
+      Breaches affecting 500 or more individuals require immediate notification
+      to the Department of Health and Human Services.
+    required: true
+    verification: "HHS reporting workflow is documented and contact details are current"

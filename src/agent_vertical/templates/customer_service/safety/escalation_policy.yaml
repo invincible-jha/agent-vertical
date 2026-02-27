@@ -1,0 +1,136 @@
+# Escalation Policy — Customer Service Agent Template
+# Defines when, how, and to whom customer interactions are escalated to a human.
+# Version: 1.0.0
+
+metadata:
+  version: "1.0.0"
+  applicable_to:
+    - customer_service_general
+    - technical_support
+    - billing_support
+    - complaints_handling
+  last_reviewed: "2026-01-01"
+
+triggers:
+  customer_request:
+    enabled: true
+    priority: immediate
+    description: >
+      Customer explicitly requests to speak with a human agent. This trigger
+      must always be honoured immediately without delay or deflection.
+    response_template: >
+      Of course. I'm connecting you with one of our team members now.
+      Please hold for a moment.
+
+  sentiment_negative:
+    enabled: true
+    priority: high
+    description: >
+      Sustained negative sentiment detected across two or more consecutive turns.
+      Agent should acknowledge the customer's frustration and offer escalation.
+    sentiment_threshold: -0.5
+    consecutive_turns_threshold: 2
+    response_template: >
+      I can hear that you're frustrated, and I want to make sure we resolve
+      this for you. I'd like to connect you with one of our specialists.
+
+  unresolved_after_n_turns:
+    enabled: true
+    priority: medium
+    description: >
+      Issue remains unresolved after the configured maximum number of turns.
+      Agent proactively offers human escalation.
+    max_turns: 8
+    response_template: >
+      I want to make sure we get this fully resolved for you. Let me connect
+      you with a specialist who can take a closer look.
+
+  legal_threat:
+    enabled: true
+    priority: critical
+    description: >
+      Customer mentions legal action, solicitors, small claims court, or
+      regulatory bodies. Immediate escalation to senior agent is required.
+    trigger_keywords:
+      - "sue"
+      - "legal action"
+      - "lawyer"
+      - "solicitor"
+      - "court"
+      - "ombudsman"
+      - "trading standards"
+      - "consumer protection"
+    response_template: >
+      I understand your concerns and I want to address them seriously.
+      I'm escalating this to our customer relations team who handle these
+      matters and will be in touch with you promptly.
+
+  safety_concern:
+    enabled: true
+    priority: critical
+    description: >
+      Customer expresses distress, mentions harm, or a safety situation arises.
+      Immediate escalation and signposting to emergency services if required.
+    trigger_keywords:
+      - "harm"
+      - "hurt"
+      - "emergency"
+      - "accident"
+      - "injured"
+    emergency_response: true
+    response_template: >
+      I'm concerned about your safety. If this is an emergency, please call
+      emergency services (999 / 911 / 112) immediately. I'm also escalating
+      this to a senior team member right now.
+
+  complaint_severity_high:
+    enabled: true
+    priority: high
+    description: >
+      Customer indicates a significant negative impact from a product or service
+      failure (financial loss, health impact, major disruption).
+    response_template: >
+      I'm sorry this has had such a significant impact on you. I'm escalating
+      this to our resolutions team as a priority case.
+
+  high_value_customer:
+    enabled: true
+    priority: high
+    description: >
+      Customer's lifetime value exceeds the configured high-value threshold.
+      High-value customers receive priority routing to experienced agents.
+    threshold_usd: 10000.0
+    routing_target: senior_agent_queue
+
+channels:
+  live_chat:
+    enabled: true
+    average_wait_minutes: 2
+    hours_of_operation: "24/7"
+    priority_queue_available: true
+
+  phone:
+    enabled: true
+    average_wait_minutes: 5
+    hours_of_operation: "09:00-18:00 Mon-Fri"
+    priority_queue_available: true
+
+  email_ticket:
+    enabled: true
+    sla_hours: 4
+    hours_of_operation: "24/7"
+    priority_queue_available: false
+
+context_handoff:
+  preserve_conversation_history: true
+  include_fields:
+    - customer_id
+    - session_id
+    - conversation_turns
+    - sentiment_scores
+    - issue_category
+    - attempted_resolutions
+    - escalation_trigger
+  exclude_fields:
+    - raw_pii
+    - payment_card_data

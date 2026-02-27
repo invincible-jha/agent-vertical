@@ -1,0 +1,106 @@
+# Clinical Safety Guardrails — Healthcare Agent Template
+# Runtime safety constraints for clinical AI agent operations.
+# Version: 1.0.0
+
+metadata:
+  version: "1.0.0"
+  standard: "Clinical Decision Support — Safety Framework"
+  last_reviewed: "2026-01-01"
+  risk_tier: decision_support
+
+guardrails:
+  diagnosis:
+    enabled: true
+    description: >
+      Agents operating at informational or advisory risk tiers must not provide
+      differential diagnoses. At decision_support tier, diagnoses are permitted
+      only when feeding a mandatory human review gate.
+    allowed_tiers:
+      - decision_support
+    require_human_gate: true
+    block_message: >
+      Diagnostic conclusions require clinical evaluation by a licensed professional.
+      I can provide informational context but cannot diagnose.
+
+  treatment_recommendations:
+    enabled: true
+    description: >
+      Treatment recommendations (including medication, dosage, or procedural
+      recommendations) are prohibited unless the agent is a certified clinical
+      decision support tool with explicit human review.
+    allowed_tiers: []
+    require_human_gate: true
+    block_message: >
+      Treatment recommendations must come from a licensed clinician.
+      I can surface relevant clinical information to support their decision.
+
+  dosage_calculation:
+    enabled: true
+    description: >
+      Dosage calculations for medications require clinical pharmacist review.
+      Agents may surface reference dosage ranges from authoritative sources
+      but must not present calculated doses as prescriptive.
+    allowed_tiers:
+      - decision_support
+    require_human_gate: true
+    source_attribution_required: true
+    block_message: >
+      Dosage calculations must be verified by a licensed pharmacist or prescriber.
+
+  emergency_detection:
+    enabled: true
+    description: >
+      All inputs are scanned for emergency indicators. When detected, the agent
+      must immediately redirect the user to emergency services and cease normal
+      task processing.
+    triggers:
+      severity_keywords:
+        - "chest pain"
+        - "difficulty breathing"
+        - "can't breathe"
+        - "stroke"
+        - "face drooping"
+        - "arm weakness"
+        - "unconscious"
+        - "unresponsive"
+        - "severe bleeding"
+        - "anaphylaxis"
+        - "allergic reaction"
+        - "overdose"
+        - "ingested"
+        - "suicide"
+        - "self harm"
+    response_template: >
+      Based on what you've described, this may be a medical emergency.
+      Please call emergency services (911 in the US / 999 in the UK / 112 in the EU)
+      immediately. Do not wait for further AI guidance.
+    escalation_channel: emergency_services
+
+  paediatric_geriatric_safety:
+    enabled: true
+    description: >
+      Interactions involving paediatric (< 18) or geriatric (> 75) patients
+      require explicit population-specific safety warnings and specialist referral.
+    add_population_warnings: true
+    require_specialist_referral: true
+
+  mental_health_safety:
+    enabled: true
+    description: >
+      Interactions involving mental health topics (depression, anxiety, suicidal
+      ideation) require immediate specialist referral and crisis resource provision.
+    crisis_resources:
+      us: "988 Suicide & Crisis Lifeline (call or text 988)"
+      uk: "Samaritans (116 123)"
+      au: "Lifeline (13 11 14)"
+    block_unsupported_therapy: true
+
+output_constraints:
+  max_response_length_chars: 4000
+  require_disclaimer_on_all_outputs: true
+  disclaimer_text: >
+    This response is AI-generated and for informational purposes only.
+    It does not constitute medical advice. Always consult a licensed healthcare
+    professional for medical decisions.
+  require_source_attribution: true
+  disallow_definitive_prognosis: true

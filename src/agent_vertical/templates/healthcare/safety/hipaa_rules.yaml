@@ -1,0 +1,120 @@
+# HIPAA Safety Rules — Healthcare Agent Template
+# These rules are enforced at runtime by the safety rule evaluator.
+# Version: 1.0.0
+# Framework: HIPAA Privacy Rule (45 CFR Parts 160 and 164), Security Rule
+
+metadata:
+  version: "1.0.0"
+  framework: "HIPAA-2013"
+  last_reviewed: "2026-01-01"
+  applicable_to:
+    - clinical_documentation
+    - patient_triage
+    - drug_interaction
+    - healthcare_general
+
+rules:
+  - id: HIPAA-P-001
+    category: phi_protection
+    severity: critical
+    description: >
+      Never expose, repeat, or log Protected Health Information (PHI) beyond
+      what the user has explicitly provided in this session.
+    enforcement: block_on_violation
+    applies_to: all_outputs
+
+  - id: HIPAA-P-002
+    category: medical_disclaimer
+    severity: critical
+    description: >
+      Always include a disclaimer that responses are for informational purposes
+      only and do not constitute medical advice.
+    enforcement: require_in_output
+    applies_to: all_outputs
+    required_text_pattern: "informational purposes only"
+
+  - id: HIPAA-P-003
+    category: clinical_referral
+    severity: high
+    description: >
+      Refer users to a licensed clinician for any decision affecting patient care.
+    enforcement: log_and_warn
+    applies_to: advisory_outputs
+
+  - id: HIPAA-P-004
+    category: emergency_escalation
+    severity: critical
+    description: >
+      Immediately escalate indicators of a medical emergency by instructing
+      the user to call emergency services (911 in the US).
+    enforcement: block_and_escalate
+    applies_to: all_inputs
+    trigger_patterns:
+      - "chest pain"
+      - "difficulty breathing"
+      - "stroke symptoms"
+      - "severe bleeding"
+      - "unconscious"
+      - "anaphylaxis"
+      - "overdose"
+      - "suicidal"
+
+  - id: HIPAA-P-005
+    category: scope_limitation
+    severity: high
+    description: >
+      Decline requests that fall outside the documented scope of this template
+      and explain why the request cannot be fulfilled.
+    enforcement: block_on_violation
+    applies_to: all_inputs
+
+  - id: HIPAA-P-006
+    category: diagnosis_prohibition
+    severity: critical
+    description: >
+      Do not speculate about a patient's diagnosis without verified clinical data.
+    enforcement: block_on_violation
+    applies_to: all_outputs
+
+  - id: HIPAA-P-007
+    category: phi_classification
+    severity: high
+    description: >
+      Treat all patient data shared in context as PHI subject to HIPAA protections.
+    enforcement: log_and_classify
+    applies_to: all_inputs
+
+  - id: HIPAA-S-001
+    category: access_control
+    severity: critical
+    description: >
+      Agent must operate within authenticated sessions only. Unauthenticated
+      access to patient data is prohibited.
+    enforcement: block_on_violation
+    applies_to: session_setup
+
+  - id: HIPAA-S-002
+    category: audit_logging
+    severity: critical
+    description: >
+      All interactions involving PHI must be logged to the immutable audit trail
+      before any response is returned.
+    enforcement: require_before_response
+    applies_to: phi_interactions
+
+  - id: HIPAA-S-003
+    category: data_minimisation
+    severity: high
+    description: >
+      Collect and process only the minimum PHI necessary for the task at hand.
+    enforcement: log_and_warn
+    applies_to: all_inputs
+
+  - id: HIPAA-B-001
+    category: breach_notification
+    severity: critical
+    description: >
+      Any suspected PHI breach must trigger an immediate alert to the designated
+      security officer via the configured alert channel.
+    enforcement: alert_and_log
+    applies_to: security_events

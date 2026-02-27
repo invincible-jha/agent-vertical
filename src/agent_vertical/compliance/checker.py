@@ -79,6 +79,11 @@ class ComplianceCheckResult:
     passed_rules: int = 0
     total_rules: int = 0
 
+    @property
+    def passed(self) -> bool:
+        """Alias for ``is_compliant``."""
+        return self.is_compliant
+
 
 _SEVERITY_ORDER: dict[str, int] = {
     "critical": 0,
