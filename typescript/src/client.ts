@@ -285,12 +285,3 @@ export function createAgentVerticalClient(
   };
 }
 
-/** Re-export types for convenience. */
-export type {
-  DomainConfig,
-  DomainTemplate,
-  PromptPattern,
-  TemplateConfig,
-  TemplateValidationResult,
-  ToolCollection,
-};
