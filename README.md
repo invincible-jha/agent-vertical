@@ -21,6 +21,14 @@ Part of the [AumOS](https://github.com/aumos-ai) open-source agent infrastructur
 - Domain compliance checker maps responses against domain-specific regulatory rules (e.g., HIPAA for healthcare, FCA rules for finance) and flags potential violations
 - Benchmark runner executes domain scenario suites against a template-configured agent and scores results against the template's declared evaluation criteria
 
+## Current Limitations
+
+> **Transparency note**: We list known limitations to help you evaluate fit.
+
+- **Domains**: 4 domains (healthcare, finance, education, legal). Retail, logistics, HR, manufacturing pending.
+- **Templates**: 12 templates total — limited coverage per domain.
+- **Customization**: Template-based — no dynamic domain generation.
+
 ## Quick Start
 
 Install from PyPI:

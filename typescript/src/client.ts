@@ -1,8 +1,12 @@
 /**
  * HTTP client for the agent-vertical domain template API.
  *
- * Uses the Fetch API (available natively in Node 18+, browsers, and Deno).
- * No external dependencies required.
+ * Delegates all HTTP transport to `@aumos/sdk-core` which provides
+ * automatic retry with exponential back-off, timeout management via
+ * `AbortSignal.timeout`, interceptor support, and a typed error hierarchy.
+ *
+ * The public-facing `ApiResult<T>` envelope is preserved for full
+ * backward compatibility with existing callers.
  *
  * @example
  * ```ts
@@ -18,8 +22,16 @@
  * ```
  */
 
+import {
+  createHttpClient,
+  HttpError,
+  NetworkError,
+  TimeoutError,
+  AumosError,
+  type HttpClient,
+} from "@aumos/sdk-core";
+
 import type {
-  ApiError,
   ApiResult,
   DomainConfig,
   DomainTemplate,
@@ -44,55 +56,51 @@ export interface AgentVerticalClientConfig {
 }
 
 // ---------------------------------------------------------------------------
-// Internal helpers
+// Internal adapter
 // ---------------------------------------------------------------------------
 
-async function fetchJson<T>(
-  url: string,
-  init: RequestInit,
-  timeoutMs: number,
+async function callApi<T>(
+  operation: () => Promise<{ readonly data: T; readonly status: number }>,
 ): Promise<ApiResult<T>> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
   try {
-    const response = await fetch(url, { ...init, signal: controller.signal });
-    clearTimeout(timeoutId);
-
-    const body = await response.json() as unknown;
-
-    if (!response.ok) {
-      const errorBody = body as Partial<ApiError>;
+    const response = await operation();
+    return { ok: true, data: response.data };
+  } catch (error: unknown) {
+    if (error instanceof HttpError) {
       return {
         ok: false,
-        error: {
-          error: errorBody.error ?? "Unknown error",
-          detail: errorBody.detail ?? "",
-        },
-        status: response.status,
+        error: { error: error.message, detail: String(error.body ?? "") },
+        status: error.statusCode,
       };
     }
-
-    return { ok: true, data: body as T };
-  } catch (err: unknown) {
-    clearTimeout(timeoutId);
-    const message = err instanceof Error ? err.message : String(err);
+    if (error instanceof TimeoutError) {
+      return {
+        ok: false,
+        error: { error: "Request timed out", detail: error.message },
+        status: 0,
+      };
+    }
+    if (error instanceof NetworkError) {
+      return {
+        ok: false,
+        error: { error: "Network error", detail: error.message },
+        status: 0,
+      };
+    }
+    if (error instanceof AumosError) {
+      return {
+        ok: false,
+        error: { error: error.code, detail: error.message },
+        status: error.statusCode ?? 0,
+      };
+    }
+    const message = error instanceof Error ? error.message : String(error);
     return {
       ok: false,
-      error: { error: "Network error", detail: message },
+      error: { error: "Unexpected error", detail: message },
       status: 0,
     };
   }
-}
-
-function buildHeaders(
-  extraHeaders: Readonly<Record<string, string>> | undefined,
-): Record<string, string> {
-  return {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-    ...extraHeaders,
-  };
 }
 
 // ---------------------------------------------------------------------------
@@ -186,102 +194,81 @@ export interface AgentVerticalClient {
 export function createAgentVerticalClient(
   config: AgentVerticalClientConfig,
 ): AgentVerticalClient {
-  const { baseUrl, timeoutMs = 30_000, headers: extraHeaders } = config;
-  const baseHeaders = buildHeaders(extraHeaders);
+  const http: HttpClient = createHttpClient({
+    baseUrl: config.baseUrl,
+    timeout: config.timeoutMs ?? 30_000,
+    defaultHeaders: config.headers,
+  });
 
   return {
-    async getTemplates(options?: {
+    getTemplates(options?: {
       domain?: string;
       limit?: number;
     }): Promise<ApiResult<readonly DomainTemplate[]>> {
-      const params = new URLSearchParams();
-      if (options?.domain !== undefined) {
-        params.set("domain", options.domain);
-      }
-      if (options?.limit !== undefined) {
-        params.set("limit", String(options.limit));
-      }
-      const query = params.toString();
-      return fetchJson<readonly DomainTemplate[]>(
-        `${baseUrl}/vertical/templates${query ? `?${query}` : ""}`,
-        { method: "GET", headers: baseHeaders },
-        timeoutMs,
+      const queryParams: Record<string, string> = {};
+      if (options?.domain !== undefined) queryParams["domain"] = options.domain;
+      if (options?.limit !== undefined) queryParams["limit"] = String(options.limit);
+      return callApi(() =>
+        http.get<readonly DomainTemplate[]>("/vertical/templates", { queryParams }),
       );
     },
 
-    async applyTemplate(
-      templateConfig: TemplateConfig,
-    ): Promise<ApiResult<DomainTemplate>> {
-      return fetchJson<DomainTemplate>(
-        `${baseUrl}/vertical/templates/apply`,
-        {
-          method: "POST",
-          headers: baseHeaders,
-          body: JSON.stringify(templateConfig),
-        },
-        timeoutMs,
+    applyTemplate(templateConfig: TemplateConfig): Promise<ApiResult<DomainTemplate>> {
+      return callApi(() =>
+        http.post<DomainTemplate>("/vertical/templates/apply", templateConfig),
       );
     },
 
-    async validateTemplate(
+    validateTemplate(
       templateName: string,
     ): Promise<ApiResult<TemplateValidationResult>> {
-      return fetchJson<TemplateValidationResult>(
-        `${baseUrl}/vertical/templates/${encodeURIComponent(templateName)}/validate`,
-        { method: "GET", headers: baseHeaders },
-        timeoutMs,
+      return callApi(() =>
+        http.get<TemplateValidationResult>(
+          `/vertical/templates/${encodeURIComponent(templateName)}/validate`,
+        ),
       );
     },
 
-    async getToolCollection(options: {
+    getToolCollection(options: {
       domain?: string;
       template_name?: string;
     }): Promise<ApiResult<ToolCollection>> {
-      const params = new URLSearchParams();
-      if (options.domain !== undefined) {
-        params.set("domain", options.domain);
-      }
+      const queryParams: Record<string, string> = {};
+      if (options.domain !== undefined) queryParams["domain"] = options.domain;
       if (options.template_name !== undefined) {
-        params.set("template_name", options.template_name);
+        queryParams["template_name"] = options.template_name;
       }
-      return fetchJson<ToolCollection>(
-        `${baseUrl}/vertical/tools?${params.toString()}`,
-        { method: "GET", headers: baseHeaders },
-        timeoutMs,
+      return callApi(() =>
+        http.get<ToolCollection>("/vertical/tools", { queryParams }),
       );
     },
 
-    async getDomainConfig(domain: string): Promise<ApiResult<DomainConfig>> {
-      return fetchJson<DomainConfig>(
-        `${baseUrl}/vertical/domains/${encodeURIComponent(domain)}/config`,
-        { method: "GET", headers: baseHeaders },
-        timeoutMs,
+    getDomainConfig(domain: string): Promise<ApiResult<DomainConfig>> {
+      return callApi(() =>
+        http.get<DomainConfig>(
+          `/vertical/domains/${encodeURIComponent(domain)}/config`,
+        ),
       );
     },
 
-    async getPromptPattern(domain: string): Promise<ApiResult<PromptPattern>> {
-      return fetchJson<PromptPattern>(
-        `${baseUrl}/vertical/domains/${encodeURIComponent(domain)}/rules`,
-        { method: "GET", headers: baseHeaders },
-        timeoutMs,
+    getPromptPattern(domain: string): Promise<ApiResult<PromptPattern>> {
+      return callApi(() =>
+        http.get<PromptPattern>(
+          `/vertical/domains/${encodeURIComponent(domain)}/rules`,
+        ),
       );
     },
 
-    async listDomains(): Promise<ApiResult<readonly string[]>> {
-      return fetchJson<readonly string[]>(
-        `${baseUrl}/vertical/domains`,
-        { method: "GET", headers: baseHeaders },
-        timeoutMs,
-      );
+    listDomains(): Promise<ApiResult<readonly string[]>> {
+      return callApi(() => http.get<readonly string[]>("/vertical/domains"));
     },
 
-    async getTemplate(templateName: string): Promise<ApiResult<DomainTemplate>> {
-      return fetchJson<DomainTemplate>(
-        `${baseUrl}/vertical/templates/${encodeURIComponent(templateName)}`,
-        { method: "GET", headers: baseHeaders },
-        timeoutMs,
+    getTemplate(templateName: string): Promise<ApiResult<DomainTemplate>> {
+      return callApi(() =>
+        http.get<DomainTemplate>(
+          `/vertical/templates/${encodeURIComponent(templateName)}`,
+        ),
       );
     },
   };
 }
-

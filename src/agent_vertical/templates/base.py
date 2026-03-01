@@ -181,6 +181,12 @@ def load_all_templates() -> TemplateRegistry:
     # education and legal have no sub-package conflict; import normally.
     import agent_vertical.templates.education  # noqa: F401
     import agent_vertical.templates.legal  # noqa: F401
+    import agent_vertical.templates.retail  # noqa: F401
+    import agent_vertical.templates.energy  # noqa: F401
+    import agent_vertical.templates.agriculture  # noqa: F401
+    import agent_vertical.templates.logistics  # noqa: F401
+    import agent_vertical.templates.real_estate  # noqa: F401
+    import agent_vertical.templates.manufacturing  # noqa: F401
 
     # healthcare.py and finance.py are shadowed by same-named sub-packages
     # introduced by background agents.  Load the flat .py files explicitly.
